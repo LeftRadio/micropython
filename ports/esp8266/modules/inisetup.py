@@ -2,11 +2,10 @@ import uos
 import network
 from flashbdev import bdev
 
-def wifi():
+def wifi(essid, pswd):
     import ubinascii
     ap_if = network.WLAN(network.AP_IF)
-    essid = b"MicroPython-%s" % ubinascii.hexlify(ap_if.config("mac")[-3:])
-    ap_if.config(essid=essid, authmode=network.AUTH_WPA_WPA2_PSK, password=b"micropythoN")
+    ap_if.config(essid=essid, authmode=network.AUTH_WPA_WPA2_PSK, password=pswd)
 
 def check_bootsec():
     buf = bytearray(bdev.SEC_SIZE)
@@ -34,8 +33,8 @@ programming).
 
 def setup():
     check_bootsec()
-    print("Performing initial setup")
-    wifi()
+    print("Performing initial setup...")
+    # wifi()
     uos.VfsFat.mkfs(bdev)
     vfs = uos.VfsFat(bdev)
     uos.mount(vfs, '/')
@@ -44,6 +43,9 @@ def setup():
 # This file is executed on every boot (including wake-boot from deepsleep)
 #import esp
 #esp.osdebug(None)
+# Start wlan AP with ssid=b"MicroPython-1234", pswd=b"micropythoN"
+#from inisetup import wifi
+#wifi(b"MicroPython-1234", b"micropythoN")
 import gc
 #import webrepl
 #webrepl.start()
