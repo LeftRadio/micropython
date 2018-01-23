@@ -34,6 +34,9 @@
 
 #include "ssl.h"
 
+extern mp_uint_t mp_hal_ticks_ms(void);
+// extern void system_soft_wdt_feed(void);
+
 typedef struct _mp_obj_ssl_socket_t {
     mp_obj_base_t base;
     mp_obj_t sock;
@@ -41,6 +44,7 @@ typedef struct _mp_obj_ssl_socket_t {
     SSL *ssl_sock;
     byte *buf;
     uint32_t bytes_left;
+    mp_uint_t timeout;
 } mp_obj_ssl_socket_t;
 
 struct ssl_args {
@@ -50,7 +54,11 @@ struct ssl_args {
     mp_arg_val_t server_hostname;
 };
 
+/*******************************************************************************/
+// The socket functions provided by socket.
+
 STATIC const mp_obj_type_t ussl_socket_type;
+
 
 STATIC mp_obj_ssl_socket_t *socket_new(mp_obj_t sock, struct ssl_args *args) {
 #if MICROPY_PY_USSL_FINALISER
@@ -62,8 +70,9 @@ STATIC mp_obj_ssl_socket_t *socket_new(mp_obj_t sock, struct ssl_args *args) {
     o->buf = NULL;
     o->bytes_left = 0;
     o->sock = sock;
+    o->timeout = -1;
 
-    uint32_t options = SSL_SERVER_VERIFY_LATER;
+    uint32_t options = SSL_SERVER_VERIFY_LATER | SSL_READ_BLOCKING;
     if (args->key.u_obj != mp_const_none) {
         options |= SSL_NO_DEFAULT_KEY;
     }
@@ -121,69 +130,126 @@ STATIC void socket_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kin
     mp_printf(print, "<_SSLSocket %p>", self->ssl_sock);
 }
 
-STATIC mp_uint_t socket_read(mp_obj_t o_in, void *buf, mp_uint_t size, int *errcode) {
-    mp_obj_ssl_socket_t *o = MP_OBJ_TO_PTR(o_in);
+STATIC mp_obj_t socket_setblocking(mp_obj_t self_in, mp_obj_t flag_in) {
+    mp_obj_ssl_socket_t *self = MP_OBJ_TO_PTR(self_in);
+    bool val = mp_obj_is_true(flag_in);
+    // set self timeout respect block settings.
+    if (val) {
+        self->timeout = -1;
+    } else {
+        self->timeout = 0;
+    }
+    // set block flag to the wrapped socket.
+    mp_obj_t sock = self->sock;
+    mp_obj_t dest[3];
+    mp_load_method(sock, MP_QSTR_setblocking, dest);
+    dest[2] = flag_in;
+    return mp_call_method_n_kw(1, 0, dest);
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_setblocking_obj, socket_setblocking);
 
-    if (o->ssl_sock == NULL) {
+STATIC mp_obj_t socket_settimeout(mp_obj_t self_in, mp_obj_t timeout_in) {
+    mp_obj_ssl_socket_t *self = self_in;
+    mp_uint_t timeout;
+    mp_obj_t block;
+
+    if (timeout_in == mp_const_none) {
+        timeout = -1;
+        block = mp_const_true;
+    } else {
+        #if MICROPY_PY_BUILTINS_FLOAT
+        timeout = 1000 * mp_obj_get_float(timeout_in);
+        #else
+        timeout = 1000 * mp_obj_get_int(timeout_in);
+        #endif
+        block = mp_const_false;
+    }
+    // WARNING! This is neccsesary, do not delete.
+    socket_setblocking(self_in, block);
+    // set timeout and return.
+    self->timeout = timeout;
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_settimeout_obj, socket_settimeout);
+
+STATIC mp_uint_t socket_read(mp_obj_t self_in, void *buf, mp_uint_t size, int *errcode) {
+    /* method worked in BLOCK and NOT-BLOCK modes. */
+
+    mp_obj_ssl_socket_t *obj= MP_OBJ_TO_PTR(self_in);
+
+    if (obj->ssl_sock == NULL) {
         *errcode = EBADF;
         return MP_STREAM_ERROR;
     }
+    // save start time for timeout
+    mp_uint_t start = mp_hal_ticks_ms();
+    // read data
+    while (obj->bytes_left < size) {
 
-    while (o->bytes_left == 0) {
-        mp_int_t r = ssl_read(o->ssl_sock, &o->buf);
-        if (r == SSL_OK) {
-            // SSL_OK from ssl_read() means "everything is ok, but there's
-            // no user data yet". So, we just keep reading.
-            continue;
+        // mp_int_t result = ssl_read(obj->ssl_sock, &obj->buf);
+        mp_int_t result = basic_read(obj->ssl_sock, &obj->buf);
+
+        if (result == SSL_OK || result == SSL_EAGAIN) {
+            // SSL_OK - everything is ok, but there's no user data
+
+            // reset to go again
+            if (result == SSL_EAGAIN) {
+                obj->ssl_sock->bm_read_index = 0;
+            }
+
+            // break if not needed wait ( NOT blocking mode )
+            if (obj->timeout == 0) {
+                break;
+            }
+            // break if end of timeout and data read < reqest size. ( NOT blocking mode )
+            else if (obj->timeout > 0 && (mp_hal_ticks_ms() - start > obj->timeout)) {
+                *errcode = MP_ETIMEDOUT;
+                break;
+            }
+            // keep reading. ( blocking mode )
+            else {
+                continue;
+            }
         }
-        if (r < 0) {
-            if (r == SSL_CLOSE_NOTIFY || r == SSL_ERROR_CONN_LOST) {
+        if (result < 0) {
+            if (result == SSL_CLOSE_NOTIFY || result == SSL_ERROR_CONN_LOST) {
                 // EOF
-                return 0;
+                *errcode = -1;
             }
-            if (r == SSL_EAGAIN) {
-                r = MP_EAGAIN;
+            else {
+                *errcode = result;
             }
-            *errcode = r;
             return MP_STREAM_ERROR;
         }
-        o->bytes_left = r;
+        // append len of the readed data
+        obj->bytes_left += result;
     }
-
-    if (size > o->bytes_left) {
-        size = o->bytes_left;
+    // if requested len > readed.
+    if (size > obj->bytes_left) {
+        size = obj->bytes_left;
     }
-    memcpy(buf, o->buf, size);
-    o->buf += size;
-    o->bytes_left -= size;
+    // copy readed bytes, shift buf pointer
+    memcpy(buf, obj->buf, size);
+    obj->buf += size;
+    obj->bytes_left -= size;
     return size;
 }
 
 STATIC mp_uint_t socket_write(mp_obj_t o_in, const void *buf, mp_uint_t size, int *errcode) {
-    mp_obj_ssl_socket_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_ssl_socket_t *obj = MP_OBJ_TO_PTR(o_in);
 
-    if (o->ssl_sock == NULL) {
+    if (obj->ssl_sock == NULL) {
         *errcode = EBADF;
         return MP_STREAM_ERROR;
     }
 
-    mp_int_t r = ssl_write(o->ssl_sock, buf, size);
-    if (r < 0) {
-        *errcode = r;
+    mp_int_t result = ssl_write(obj->ssl_sock, buf, size);
+    if (result < 0) {
+        *errcode = result;
         return MP_STREAM_ERROR;
     }
-    return r;
+    return result;
 }
-
-STATIC mp_obj_t socket_setblocking(mp_obj_t self_in, mp_obj_t flag_in) {
-    // Currently supports only blocking mode
-    (void)self_in;
-    if (!mp_obj_is_true(flag_in)) {
-        mp_raise_NotImplementedError(NULL);
-    }
-    return mp_const_none;
-}
-STATIC MP_DEFINE_CONST_FUN_OBJ_2(socket_setblocking_obj, socket_setblocking);
 
 STATIC mp_obj_t socket_close(mp_obj_t self_in) {
     mp_obj_ssl_socket_t *self = MP_OBJ_TO_PTR(self_in);
@@ -193,17 +259,17 @@ STATIC mp_obj_t socket_close(mp_obj_t self_in) {
         self->ssl_sock = NULL;
         return mp_stream_close(self->sock);
     }
-
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(socket_close_obj, socket_close);
 
 STATIC const mp_rom_map_elem_t ussl_socket_locals_dict_table[] = {
+    { MP_ROM_QSTR(MP_QSTR_settimeout), MP_ROM_PTR(&socket_settimeout_obj) },
+    { MP_ROM_QSTR(MP_QSTR_setblocking), MP_ROM_PTR(&socket_setblocking_obj) },
     { MP_ROM_QSTR(MP_QSTR_read), MP_ROM_PTR(&mp_stream_read_obj) },
     { MP_ROM_QSTR(MP_QSTR_readinto), MP_ROM_PTR(&mp_stream_readinto_obj) },
     { MP_ROM_QSTR(MP_QSTR_readline), MP_ROM_PTR(&mp_stream_unbuffered_readline_obj) },
     { MP_ROM_QSTR(MP_QSTR_write), MP_ROM_PTR(&mp_stream_write_obj) },
-    { MP_ROM_QSTR(MP_QSTR_setblocking), MP_ROM_PTR(&socket_setblocking_obj) },
     { MP_ROM_QSTR(MP_QSTR_close), MP_ROM_PTR(&socket_close_obj) },
 #if MICROPY_PY_USSL_FINALISER
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&socket_close_obj) },
