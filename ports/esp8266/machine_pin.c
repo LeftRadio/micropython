@@ -421,6 +421,14 @@ STATIC mp_uint_t pin_ioctl(mp_obj_t self_in, mp_uint_t request, uintptr_t arg, i
             pin_set(self->phys_port, arg);
             return 0;
         }
+        case MP_PIN_INPUT: {
+            mp_hal_pin_input(self->phys_port);
+            return 0;
+        }
+        case MP_PIN_OUTPUT: {
+            mp_hal_pin_output(self->phys_port);
+            return 0;
+        }
     }
     return -1;
 }
