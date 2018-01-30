@@ -243,6 +243,16 @@ PY_O_BASENAME = \
 	../extmod/vfs_fat_misc.o \
 	../extmod/utime_mphal.o \
 	../extmod/uos_dupterm.o \
+	../extmod/bricks/brickbase.o \
+	../extmod/bricks/scenaries/scenaries.o \
+	../extmod/bricks/scenaries/timer.o \
+	../extmod/bricks/scenaries/regulator.o \
+	../extmod/bricks/sensors/sensors.o \
+	../extmod/bricks/sensors/dinput.o \
+	../extmod/bricks/sensors/lm75.o \
+	../extmod/bricks/sensors/sht21.o \
+	../extmod/bricks/actuators/actuators.o \
+	../extmod/bricks/actuators/doutput.o \
 	../lib/embed/abort_.o \
 	../lib/utils/printf.o \
 

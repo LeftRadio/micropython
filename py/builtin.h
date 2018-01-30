@@ -118,6 +118,11 @@ extern const mp_obj_module_t mp_module_webrepl;
 extern const mp_obj_module_t mp_module_framebuf;
 extern const mp_obj_module_t mp_module_btree;
 
+extern const mp_obj_module_t mp_module_bricks;
+extern const mp_obj_module_t mp_module_scenaries;
+extern const mp_obj_module_t mp_module_sensors;
+extern const mp_obj_module_t mp_module_actuators;
+
 extern const char MICROPY_PY_BUILTINS_HELP_TEXT[];
 
 #endif // MICROPY_INCLUDED_PY_BUILTIN_H
