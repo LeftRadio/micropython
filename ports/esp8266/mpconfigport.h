@@ -108,6 +108,11 @@
 #define MICROPY_ESP8266_APA102         (0)
 #define MICROPY_ESP8266_NEOPIXEL       (0)
 
+#define MICROPY_BRICKS_BASE            (1)
+#define MICROPY_BRICKS_SCENARIES       (1)
+#define MICROPY_BRICKS_SENSORS         (1)
+#define MICROPY_BRICKS_ACTUATORS       (1)
+
 #define MICROPY_EVENT_POLL_HOOK {ets_event_poll();}
 #define MICROPY_VM_HOOK_COUNT (10)
 #define MICROPY_VM_HOOK_INIT static uint vm_hook_divisor = MICROPY_VM_HOOK_COUNT;
@@ -176,6 +181,10 @@ extern const struct _mp_obj_module_t mp_module_onewire;
     { MP_ROM_QSTR(MP_QSTR_errno), MP_ROM_PTR(&mp_module_uerrno) }, \
     { MP_ROM_QSTR(MP_QSTR_select), MP_ROM_PTR(&mp_module_uselect) }, \
     { MP_ROM_QSTR(MP_QSTR_socket), MP_ROM_PTR(&mp_module_lwip) }, \
+    { MP_ROM_QSTR(MP_QSTR_bricks), MP_ROM_PTR(&mp_module_bricks) }, \
+    { MP_ROM_QSTR(MP_QSTR_scenaries), MP_ROM_PTR(&mp_module_scenaries) }, \
+    { MP_ROM_QSTR(MP_QSTR_sensors), MP_ROM_PTR(&mp_module_sensors) }, \
+    { MP_ROM_QSTR(MP_QSTR_actuators), MP_ROM_PTR(&mp_module_actuators) }, \
 
 #define MP_STATE_PORT MP_STATE_VM
 
