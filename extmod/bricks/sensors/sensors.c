@@ -1,4 +1,7 @@
 
+#include <stdio.h>
+#include <stdint.h>
+
 #include "py/mpconfig.h"
 #include "py/obj.h"
 #include "py/mphal.h"
@@ -12,30 +15,42 @@
 
 extern mp_obj_t machine_i2c_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args);
 
-mp_obj_t bricks_sensors_req_i2c_peripheral(mp_int_t id, mp_int_t scl, mp_int_t sda, mp_int_t freq) {
-    // maximum of 5 i2c peripherals allowed
-    static mp_map_elem_t hal_i2c_periph[5] = {
-        {MP_OBJ_NEW_SMALL_INT(-32767), NULL},
-        {MP_OBJ_NEW_SMALL_INT(-32767), NULL},
-        {MP_OBJ_NEW_SMALL_INT(-32767), NULL},
-        {MP_OBJ_NEW_SMALL_INT(-32767), NULL},
-        {MP_OBJ_NEW_SMALL_INT(-32767), NULL}
+
+mp_map_elem_t _hal_i2c[5] = {
+        {MP_OBJ_NULL, MP_OBJ_NULL},
+        {MP_OBJ_NULL, MP_OBJ_NULL},
+        {MP_OBJ_NULL, MP_OBJ_NULL},
+        {MP_OBJ_NULL, MP_OBJ_NULL},
+        {MP_OBJ_NULL, MP_OBJ_NULL}
     };
-    // search already exist
-    mp_int_t key;
-    mp_int_t last_index = 0;
-    for (uint8_t i = 0; i < 5; i++) {
-        key = mp_obj_get_int(hal_i2c_periph[i].key);
-        if (key != 32767 && hal_i2c_periph[i].value != NULL) {
-            last_index = i;
-            if (key == id) {
-                return hal_i2c_periph[i].value;
+
+
+STATIC mp_obj_t _search_i2c_periph(mp_int_t id, mp_int_t* index) {
+    *index = 0;
+    for (int i = 0; i < 5; i++) {
+        if (_hal_i2c[i].key != MP_OBJ_NULL && _hal_i2c[i].value != MP_OBJ_NULL) {
+            *index = i + 1;
+            if ( id == mp_obj_get_int(_hal_i2c[i].key) ) {
+                return _hal_i2c[i].value;
             }
         }
     }
-    if (last_index >= 4) {
+    return MP_OBJ_NULL;
+}
+
+
+mp_obj_t bricks_sensors_req_i2c_peripheral(mp_int_t id, mp_int_t scl, mp_int_t sda, mp_int_t freq) {
+    // search exist
+    mp_int_t next_index = 0;
+    mp_obj_t i2c_inst = _search_i2c_periph(id, &next_index);
+
+    if (i2c_inst != MP_OBJ_NULL) {
+        return i2c_inst;
+    }
+    else if (next_index == 5) {
         mp_raise_ValueError("error create I2C peripheral, maximum of instances used");
     }
+
     // create SDA/SCL pins
     mp_obj_t pargs[1] = { mp_obj_new_int(scl) };
     mp_obj_t scl_pin = mp_pin_make_new(NULL, 1, 0, pargs);
@@ -48,9 +63,19 @@ mp_obj_t bricks_sensors_req_i2c_peripheral(mp_int_t id, mp_int_t scl, mp_int_t s
         {mp_obj_new_str("freq", 4), mp_obj_new_int(freq)},
         {mp_obj_new_str("timeout", 7), mp_obj_new_int(100)},
     };
-    hal_i2c_periph[last_index+1].key = mp_obj_new_int(id);
-    hal_i2c_periph[last_index+1].value = machine_i2c_make_new(NULL, 0, 4, (const mp_obj_t*)elements);
-    return hal_i2c_periph[last_index+1].value;
+    _hal_i2c[next_index].key = mp_obj_new_int(id);
+    _hal_i2c[next_index].value = machine_i2c_make_new(MP_OBJ_NULL, 0, 4, (const mp_obj_t*)elements);
+    return _hal_i2c[next_index].value;
+}
+
+
+void bricks_sensors_free_i2c_peripheral(mp_int_t id) {
+    mp_int_t next_index = 0;
+    mp_obj_t i2c_inst = _search_i2c_periph(id, &next_index);
+    if (i2c_inst != MP_OBJ_NULL) {
+        _hal_i2c[next_index-1].key = MP_OBJ_NULL;
+        _hal_i2c[next_index-1].value = MP_OBJ_NULL;
+    }
 }
 
 
