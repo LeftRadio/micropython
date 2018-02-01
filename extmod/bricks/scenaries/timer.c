@@ -93,7 +93,6 @@ STATIC mp_obj_t timer_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
 STATIC mp_obj_t timer_init(mp_obj_t self_in) {
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(timer_init_obj, timer_init);
 
 
 STATIC mp_obj_t timer_update(mp_obj_t self_in, mp_obj_t seconds_in, mp_obj_t interval_in) {
@@ -164,7 +163,6 @@ STATIC mp_obj_t timer_update(mp_obj_t self_in, mp_obj_t seconds_in, mp_obj_t int
 
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(timer_update_obj, timer_update);
 
 
 STATIC mp_obj_t timer_update_slot(mp_obj_t self_in, mp_obj_t sender, mp_obj_t data) {
@@ -172,20 +170,17 @@ STATIC mp_obj_t timer_update_slot(mp_obj_t self_in, mp_obj_t sender, mp_obj_t da
     self->enable = mp_obj_is_true(data);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(timer_update_slot_obj, timer_update_slot);
 
 
 STATIC mp_obj_t timer_name(mp_obj_t self_in) {
     timer_obj_t *self = (timer_obj_t*)self_in;
     return mp_obj_new_str(self->name, self->name_len);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(timer_name_obj, timer_name);
 
 
 STATIC mp_obj_t timer_group(mp_obj_t self_in) {
     return MP_ROM_QSTR(MP_QSTR_scenaries);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(timer_group_obj, timer_group);
 
 
 STATIC mp_obj_t timer_properties(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
@@ -196,7 +191,7 @@ STATIC mp_obj_t timer_properties(size_t n_args, const mp_obj_t *args, mp_map_t *
     if (kw_len == 0) {
         mp_obj_dict_t *dict = mp_obj_new_dict(8);
         mp_map_elem_t *t = dict->map.table;
-        t[0].key = MP_ROM_QSTR(MP_QSTR_classname);      t[0].value = MP_ROM_QSTR(MP_QSTR_LM75);
+        t[0].key = MP_ROM_QSTR(MP_QSTR_classname);      t[0].value = MP_ROM_QSTR(MP_QSTR_UserTimer);
         t[1].key = MP_ROM_QSTR(MP_QSTR_name);           t[1].value = mp_obj_new_str(self->name, self->name_len);
         t[2].key = MP_ROM_QSTR(MP_QSTR_enable);         t[2].value = mp_obj_new_bool(self->enable);
         t[3].key = MP_ROM_QSTR(MP_QSTR_binded);         t[3].value = mp_obj_new_bool(self->binded);
@@ -211,8 +206,14 @@ STATIC mp_obj_t timer_properties(size_t n_args, const mp_obj_t *args, mp_map_t *
     timer_init_helper(self, n_args-1, args+1, kw_args);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(timer_properties_obj, 1, timer_properties);
 
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(timer_init_obj, timer_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(timer_update_obj, timer_update);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(timer_update_slot_obj, timer_update_slot);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(timer_name_obj, timer_name);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(timer_group_obj, timer_group);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(timer_properties_obj, 1, timer_properties);
 
 STATIC const mp_rom_map_elem_t timer_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&timer_init_obj) },

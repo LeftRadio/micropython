@@ -161,13 +161,13 @@ STATIC mp_obj_t regulator_properties(size_t n_args, const mp_obj_t *args, mp_map
     if (kw_len == 0) {
         mp_obj_dict_t *dict = mp_obj_new_dict(7);
         mp_map_elem_t *t = dict->map.table;
-        t[0].key = MP_ROM_QSTR(MP_QSTR_classname);      t[0].value = MP_ROM_QSTR(MP_QSTR_LM75);
-        t[1].key = MP_ROM_QSTR(MP_QSTR_name);           t[1].value = mp_obj_new_str(self->name, self->name_len);
-        t[2].key = MP_ROM_QSTR(MP_QSTR_enable);         t[2].value = mp_obj_new_bool(self->enable);
-        t[3].key = MP_ROM_QSTR(MP_QSTR_binded);         t[3].value = mp_obj_new_bool(self->binded);
-        t[4].key = mp_obj_new_str("intent", 6);         t[4].value = mp_obj_new_int(self->intent);
-        t[5].key = mp_obj_new_str("hysteresis", 10);    t[5].value = mp_obj_new_int(self->hysteresis);
-        t[6].key = mp_obj_new_str("inverted", 8);       t[6].value = mp_obj_new_bool(self->inverted);
+        t[0].key = MP_ROM_QSTR(MP_QSTR_classname);  t[0].value = MP_ROM_QSTR(MP_QSTR_Regulator);
+        t[1].key = MP_ROM_QSTR(MP_QSTR_name);       t[1].value = mp_obj_new_str(self->name, self->name_len);
+        t[2].key = MP_ROM_QSTR(MP_QSTR_enable);     t[2].value = mp_obj_new_bool(self->enable);
+        t[3].key = MP_ROM_QSTR(MP_QSTR_binded);     t[3].value = mp_obj_new_bool(self->binded);
+        t[4].key = MP_ROM_QSTR(MP_QSTR_intent);     t[4].value = mp_obj_new_int(self->intent);
+        t[5].key = MP_ROM_QSTR(MP_QSTR_hysteresis); t[5].value = mp_obj_new_int(self->hysteresis);
+        t[6].key = MP_ROM_QSTR(MP_QSTR_inverted);   t[6].value = mp_obj_new_bool(self->inverted);
         return MP_OBJ_FROM_PTR(dict);
     }
 

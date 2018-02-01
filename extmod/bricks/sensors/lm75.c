@@ -1,5 +1,8 @@
 
 
+#include <stdio.h>
+#include <stdint.h>
+
 #include "py/mpconfig.h"
 #include "py/obj.h"
 #include "py/mphal.h"
@@ -36,7 +39,7 @@ STATIC int _lm75_read_temperature(lm75_obj_t* self) {
     //
     vstr_t vstr;
     vstr_init_len(&vstr, 2);
-    bool stop = false;
+    bool stop = true;
 
     int ret = i2c_p->readfrom(i2c_obj, self->i2c_addr, (uint8_t*)vstr.buf, vstr.len, stop);
 
@@ -46,7 +49,6 @@ STATIC int _lm75_read_temperature(lm75_obj_t* self) {
     else {
         self->data = vstr.buf[0];
     }
-
     return ret;
 }
 
@@ -127,7 +129,6 @@ STATIC mp_obj_t lm75_init(mp_obj_t self_in) {
     _lm75_read_temperature( (lm75_obj_t*)self_in );
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(lm75_init_obj, lm75_init);
 
 
 STATIC mp_obj_t lm75_update(mp_obj_t self_in, mp_obj_t seconds_in, mp_obj_t interval_in) {
@@ -142,20 +143,17 @@ STATIC mp_obj_t lm75_update(mp_obj_t self_in, mp_obj_t seconds_in, mp_obj_t inte
     }
     return mp_obj_new_int(ret);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(lm75_update_obj, lm75_update);
 
 
 STATIC mp_obj_t lm75_name(mp_obj_t self_in) {
     lm75_obj_t *self = (lm75_obj_t*)self_in;
     return mp_obj_new_str(self->name, self->name_len);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(lm75_name_obj, lm75_name);
 
 
 STATIC mp_obj_t lm75_group(mp_obj_t self_in) {
     return MP_ROM_QSTR(MP_QSTR_sensors);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(lm75_group_obj, lm75_group);
 
 
 STATIC mp_obj_t lm75_properties(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
@@ -181,8 +179,13 @@ STATIC mp_obj_t lm75_properties(size_t n_args, const mp_obj_t *args, mp_map_t *k
     lm75_init_helper(self, n_args-1, args+1, kw_args);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(lm75_properties_obj, 1, lm75_properties);
 
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(lm75_init_obj, lm75_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(lm75_update_obj, lm75_update);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(lm75_name_obj, lm75_name);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(lm75_group_obj, lm75_group);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(lm75_properties_obj, 1, lm75_properties);
 
 STATIC const mp_rom_map_elem_t lm75_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&lm75_init_obj) },

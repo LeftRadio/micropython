@@ -98,7 +98,6 @@ STATIC mp_obj_t sht21_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
 STATIC mp_obj_t sht21_init(mp_obj_t self_in) {
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(sht21_init_obj, sht21_init);
 
 
 STATIC mp_obj_t sht21_update(mp_obj_t self_in, mp_obj_t seconds_in, mp_obj_t interval_in) {
@@ -145,20 +144,17 @@ STATIC mp_obj_t sht21_update(mp_obj_t self_in, mp_obj_t seconds_in, mp_obj_t int
 
     return mp_obj_new_int(0);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(sht21_update_obj, sht21_update);
 
 
 STATIC mp_obj_t sht21_name(mp_obj_t self_in) {
     sht21_obj_t *self = (sht21_obj_t*)self_in;
     return mp_obj_new_str(self->name, self->name_len);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(sht21_name_obj, sht21_name);
 
 
 STATIC mp_obj_t sht21_group(mp_obj_t self_in) {
     return MP_ROM_QSTR(MP_QSTR_sensors);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(sht21_group_obj, sht21_group);
 
 
 STATIC mp_obj_t sht21_properties(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
@@ -169,7 +165,7 @@ STATIC mp_obj_t sht21_properties(size_t n_args, const mp_obj_t *args, mp_map_t *
     if (kw_len == 0) {
         mp_obj_dict_t *dict = mp_obj_new_dict(8);
         mp_map_elem_t *t = dict->map.table;
-        t[0].key = MP_ROM_QSTR(MP_QSTR_classname);  t[0].value = MP_ROM_QSTR(MP_QSTR_LM75);
+        t[0].key = MP_ROM_QSTR(MP_QSTR_classname);  t[0].value = MP_ROM_QSTR(MP_QSTR_SHT21);
         t[1].key = MP_ROM_QSTR(MP_QSTR_name);       t[1].value = mp_obj_new_str(self->name, self->name_len);
         t[2].key = MP_ROM_QSTR(MP_QSTR_enable);     t[2].value = mp_obj_new_bool(self->enable);
         t[3].key = mp_obj_new_str("i2c_id", 6);     t[3].value = mp_obj_new_int(self->i2c_id);
@@ -184,8 +180,14 @@ STATIC mp_obj_t sht21_properties(size_t n_args, const mp_obj_t *args, mp_map_t *
     sht21_init_helper(self, n_args-1, args+1, kw_args);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(sht21_properties_obj, 1, sht21_properties);
 
+
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(sht21_init_obj, sht21_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(sht21_update_obj, sht21_update);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(sht21_name_obj, sht21_name);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(sht21_group_obj, sht21_group);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(sht21_properties_obj, 1, sht21_properties);
 
 STATIC const mp_rom_map_elem_t sht21_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&sht21_init_obj) },

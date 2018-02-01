@@ -72,7 +72,6 @@ STATIC mp_obj_t digital_input_make_new(const mp_obj_type_t *type, size_t n_args,
 STATIC mp_obj_t digital_input_init(mp_obj_t self_in) {
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(digital_input_init_obj, digital_input_init);
 
 
 STATIC mp_obj_t digital_input_update(mp_obj_t self_in, mp_obj_t seconds_in, mp_obj_t interval_in) {
@@ -95,20 +94,17 @@ STATIC mp_obj_t digital_input_update(mp_obj_t self_in, mp_obj_t seconds_in, mp_o
 
     return mp_obj_new_int(res);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_3(digital_input_update_obj, digital_input_update);
 
 
 STATIC mp_obj_t digital_input_name(mp_obj_t self_in) {
     digital_input_obj_t *self = (digital_input_obj_t*)self_in;
     return mp_obj_new_str(self->name, self->name_len);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(digital_input_name_obj, digital_input_name);
 
 
 STATIC mp_obj_t digital_input_group(mp_obj_t self_in) {
     return MP_ROM_QSTR(MP_QSTR_sensors);
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(digital_input_group_obj, digital_input_group);
 
 
 STATIC mp_obj_t digital_input_properties(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
@@ -119,7 +115,7 @@ STATIC mp_obj_t digital_input_properties(size_t n_args, const mp_obj_t *args, mp
     if (kw_len == 0) {
         mp_obj_dict_t *dict = mp_obj_new_dict(4);
         mp_map_elem_t *t = dict->map.table;
-        t[0].key = MP_ROM_QSTR(MP_QSTR_classname);      t[0].value = MP_ROM_QSTR(MP_QSTR_LM75);
+        t[0].key = MP_ROM_QSTR(MP_QSTR_classname);      t[0].value = MP_ROM_QSTR(MP_QSTR_DigitalInput);
         t[1].key = MP_ROM_QSTR(MP_QSTR_name);           t[1].value = mp_obj_new_str(self->name, self->name_len);
         t[2].key = MP_ROM_QSTR(MP_QSTR_enable);         t[2].value = mp_obj_new_bool(self->enable);
         t[3].key = mp_obj_new_str("index", 5);          t[3].value = mp_obj_new_int(self->index);
@@ -129,8 +125,13 @@ STATIC mp_obj_t digital_input_properties(size_t n_args, const mp_obj_t *args, mp
     digital_input_init_helper(self, n_args-1, args+1, kw_args);
     return mp_const_none;
 }
-STATIC MP_DEFINE_CONST_FUN_OBJ_KW(digital_input_properties_obj, 1, digital_input_properties);
 
+
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(digital_input_init_obj, digital_input_init);
+STATIC MP_DEFINE_CONST_FUN_OBJ_3(digital_input_update_obj, digital_input_update);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(digital_input_name_obj, digital_input_name);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(digital_input_group_obj, digital_input_group);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(digital_input_properties_obj, 1, digital_input_properties);
 
 STATIC const mp_rom_map_elem_t digital_input_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_init), MP_ROM_PTR(&digital_input_init_obj) },
