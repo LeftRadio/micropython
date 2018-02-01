@@ -35,7 +35,7 @@
 #include "ssl.h"
 
 extern mp_uint_t mp_hal_ticks_ms(void);
-// extern void system_soft_wdt_feed(void);
+
 
 typedef struct _mp_obj_ssl_socket_t {
     mp_obj_base_t base;
@@ -72,7 +72,7 @@ STATIC mp_obj_ssl_socket_t *socket_new(mp_obj_t sock, struct ssl_args *args) {
     o->sock = sock;
     o->timeout = -1;
 
-    uint32_t options = SSL_SERVER_VERIFY_LATER | SSL_READ_BLOCKING;
+    uint32_t options = SSL_SERVER_VERIFY_LATER;
     if (args->key.u_obj != mp_const_none) {
         options |= SSL_NO_DEFAULT_KEY;
     }
